@@ -146,7 +146,8 @@ class TenderScraper:
         for attempt in range(retries + 1):
             try:
                 self.session.headers["User-Agent"] = random.choice(USER_AGENTS)
-                resp = self.session.get(url, timeout=self.timeout, allow_redirects=True)
+                # (connect_timeout, read_timeout) — bounds both phases independently
+                resp = self.session.get(url, timeout=(10, self.timeout), allow_redirects=True)
                 if resp.status_code == 403 and attempt < retries:
                     wait = 2 * (attempt + 1)
                     self._log(f"Got 403 from {urlparse(url).netloc}, retrying in {wait}s (attempt {attempt+2}/{retries+1})...", "warning")
@@ -381,16 +382,21 @@ class TenderScraper:
         results = self._extract_tenders_generic(url, soup, raw_text)
         self._log(f"Found {len(results)} keyword-matched listings on {url}")
 
-        # Optionally follow detail pages for richer data
+        # Save results FIRST so they survive any failure during detail-page follow
+        with self._lock:
+            self.results.extend(results)
+
+        # Optionally follow detail pages for richer data (mutates result objects in place)
         if follow_detail and results:
             detail_count = min(len(results), max_detail)
             self._log(f"Following {detail_count} detail pages for metadata...")
             for r in results[:detail_count]:
-                self._scrape_detail_page(r)
+                try:
+                    self._scrape_detail_page(r)
+                except Exception as e:
+                    self._log(f"Detail page failed for {r.url}: {e}", "warning")
                 time.sleep(0.5)  # be polite
 
-        with self._lock:
-            self.results.extend(results)
         return results
 
     def scrape_with_search(self, site_domain=None):
