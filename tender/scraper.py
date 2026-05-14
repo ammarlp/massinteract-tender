@@ -873,8 +873,8 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     <div class="export-bar">
       <div class="meta" id="results-meta">0 tenders found</div>
       <div class="export-btns">
-        <button class="btn-export" id="btn-csv" onclick="window.location='/api/export/csv'" disabled>↓ Download CSV</button>
-        <button class="btn-export" id="btn-json" onclick="window.location='/api/export/json'" disabled>↓ Download JSON</button>
+        <button class="btn-export" id="btn-csv" onclick="window.location='/massinteract-tender/api/export/csv'" disabled>↓ Download CSV</button>
+        <button class="btn-export" id="btn-json" onclick="window.location='/massinteract-tender/api/export/json'" disabled>↓ Download JSON</button>
       </div>
     </div>
     <div id="results-list">
@@ -958,7 +958,7 @@ async function startScrape() {
   renderResults();
 
   try {
-    await fetch('/api/scrape', {
+    await fetch('/massinteract-tender/api/scrape', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -980,7 +980,7 @@ function startPolling() {
   let lastLogCount = 0;
   polling = setInterval(async () => {
     try {
-      const resp = await fetch('/api/status');
+      const resp = await fetch('/massinteract-tender/api/status');
       const data = await resp.json();
 
       // Append new logs
